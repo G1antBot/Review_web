@@ -54,6 +54,24 @@ const subjectConfig = {
       short: 5,
       judge: 10
     }
+  },
+  basic_comprehensive: {
+    title: '基础综合考试复习',
+    subtitle: '全真模拟 · A1/A2 型选择题 · 随机抽题',
+    file: 'js/questions_basic.json',
+    enabledTypes: ['single'],
+    labels: {
+      single: '选择题'
+    },
+    display: {
+      single: 50
+    },
+    hasSubjectFilter: true,
+    subjectGroups: [
+      { name: '基础医学综合', weight: '70%', subjects: ['解剖学', '生物化学', '生理学', '医学微生物学', '医学免疫学', '病理学', '病理生理学', '药理学'] },
+      { name: '医学人文综合', weight: '15%', subjects: ['医学心理学', '医学伦理学'] },
+      { name: '预防医学综合', weight: '15%', subjects: ['卫生学', '医学统计学', '流行病学'] }
+    ]
   }
 };
 
@@ -103,6 +121,7 @@ const checkButton = document.querySelector('#check-answers');
 const resetButton = document.querySelector('#reset-answers');
 const shuffleButton = document.querySelector('#shuffle-questions');
 const subjectSelect = document.querySelector('#subject-select');
+const subjectFilterEl = document.querySelector('#subject-filter');
 const brandText = document.querySelector('#brand-text');
 const subtitleText = document.querySelector('#subtitle-text');
 
@@ -120,8 +139,20 @@ const shuffle = (items) => {
   return list;
 };
 
+const getSelectedSubjects = () => {
+  const checkboxes = subjectFilterEl.querySelectorAll('input[type="checkbox"]');
+  if (checkboxes.length === 0) return null;
+  const selected = [];
+  checkboxes.forEach((cb) => { if (cb.checked) selected.push(cb.value); });
+  return selected;
+};
+
 const pickQuestions = (type, excludeItems = [], countOverride = null) => {
-  const pool = questionPool[type] || [];
+  let pool = questionPool[type] || [];
+  const selectedSubjects = getSelectedSubjects();
+  if (selectedSubjects && selectedSubjects.length > 0) {
+    pool = pool.filter((item) => selectedSubjects.includes(item.subject));
+  }
   const targetCount = countOverride ?? Math.min(currentDisplayConfig[type] ?? pool.length, pool.length);
   const excludeSet = new Set(excludeItems);
   let candidates = pool.filter((item) => !excludeSet.has(item));
@@ -226,12 +257,82 @@ const getCurrentSubject = () => subjectSelect?.value || 'surgery';
 
 const getSubjectMeta = () => subjectConfig[getCurrentSubject()] || subjectConfig.surgery;
 
+const buildSubjectFilter = (meta) => {
+  subjectFilterEl.innerHTML = '';
+  if (!meta.hasSubjectFilter || !meta.subjectGroups) return;
+  meta.subjectGroups.forEach((group) => {
+    const section = document.createElement('div');
+    section.className = 'filter-group';
+
+    const header = document.createElement('div');
+    header.className = 'filter-group-header';
+
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'filter-group-title';
+    titleSpan.textContent = group.name;
+
+    const weightBadge = document.createElement('span');
+    weightBadge.className = 'filter-group-weight';
+    weightBadge.textContent = group.weight;
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'filter-group-toggle';
+    toggleBtn.textContent = '全不选';
+    toggleBtn.type = 'button';
+
+    header.appendChild(titleSpan);
+    header.appendChild(weightBadge);
+    header.appendChild(toggleBtn);
+    section.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'filter-group-body';
+
+    const checkboxes = [];
+    group.subjects.forEach((subj) => {
+      const label = document.createElement('label');
+      label.className = 'filter-chip';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = subj;
+      cb.checked = true;
+      cb.addEventListener('change', async () => {
+        updateToggleBtnText(toggleBtn, checkboxes);
+        await loadQuestions();
+      });
+      checkboxes.push(cb);
+      const span = document.createElement('span');
+      span.textContent = subj;
+      label.appendChild(cb);
+      label.appendChild(span);
+      body.appendChild(label);
+    });
+
+    toggleBtn.addEventListener('click', async () => {
+      const allChecked = checkboxes.every((c) => c.checked);
+      checkboxes.forEach((c) => { c.checked = !allChecked; });
+      updateToggleBtnText(toggleBtn, checkboxes);
+      await loadQuestions();
+    });
+
+    section.appendChild(body);
+    subjectFilterEl.appendChild(section);
+  });
+};
+
+const updateToggleBtnText = (btn, cbs) => {
+  const allChecked = cbs.every((c) => c.checked);
+  btn.textContent = allChecked ? '全不选' : '全选';
+};
+
 const applySubjectMeta = () => {
   const meta = getSubjectMeta();
   currentDisplayConfig = { ...defaultDisplayConfig, ...meta.display };
 
   brandText.textContent = meta.title;
   subtitleText.textContent = meta.subtitle;
+
+  buildSubjectFilter(meta);
 
   tabButtons.forEach((button) => {
     const type = button.dataset.tab;
