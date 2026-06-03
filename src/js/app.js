@@ -72,6 +72,24 @@ const subjectConfig = {
       { name: '医学人文综合', weight: '15%', subjects: ['医学心理学', '医学伦理学'] },
       { name: '预防医学综合', weight: '15%', subjects: ['卫生学', '医学统计学', '流行病学'] }
     ]
+  },
+  rehabilitation: {
+    title: '康复医学复习',
+    subtitle: '全面覆盖 · 单选/判断/名词解释/简答 · 随机抽题',
+    file: 'js/questions_rehab.json',
+    enabledTypes: ['single', 'judge', 'term', 'short'],
+    labels: {
+      single: '单选题',
+      judge: '判断题',
+      term: '名词解释',
+      short: '简答题'
+    },
+    display: {
+      single: 30,
+      judge: 15,
+      term: 8,
+      short: 5
+    }
   }
 };
 
