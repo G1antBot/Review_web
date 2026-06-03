@@ -57,7 +57,7 @@
       <section class="tab-panel" data-type="judge" data-title="判断题"></section>
     </main>
 
-    <footer class="actions">
+    <div class="score-section">
       <div class="score">
         <div class="score-total">总分：<span id="score-total">0</span> / <span id="score-total-max">100</span></div>
         <div class="score-breakdown">
@@ -68,10 +68,13 @@
           <span class="score-item" id="score-item-judge"><span id="score-label-judge">判断</span> <span id="score-judge">0</span> / <span id="score-judge-max">0</span></span>
         </div>
       </div>
+    </div>
+
+    <footer class="actions">
       <div class="buttons">
         <button id="check-answers" class="primary">提交</button>
         <button id="reset-answers" class="ghost">清空</button>
-        <button id="shuffle-questions" class="ghost">换一批</button>
+        <button id="shuffle-questions" class="ghost">换</button>
       </div>
     </footer>
   </div>
